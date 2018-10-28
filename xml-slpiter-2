@@ -8,8 +8,7 @@
 # 	1. Input filename
 # 	2. Root tag of xml file
 # 	3. Each splited file should have how much lines in it
-# 	4. Optional input file number of lines
-# 	5. Optional start line
+# 	5. Start line
 # 	6. Optional start count number
 #
 #	IMPORTANT: Optional parts should be used in order, you can not have 5 without 4 for now.
@@ -20,7 +19,7 @@ root_tag=$2
 step=$3
 start=$4
 if [ $5 = -1 ];then
-	k=0
+	k=1
 else
 	k=$5
 fi
@@ -29,7 +28,7 @@ fi
 mkdir -p $root_tag
 mkdir -p $root_tag/json
 
-line_number=0
+line_number=1
 lines_wrote=0
 while read -r line
 do
@@ -37,6 +36,8 @@ do
     	echo "$line" >> $root_tag/$root_tag\_$k.xml
 	lines_wrote=$(( $lines_wrote + 1 ))
 	if [ $lines_wrote = $step ];then
+		echo "wrote $line_number to $(( $line_number + $step )) into $root_tag/$root_tag\_$k.xml" 
+		lines_wrote=0
 		k=$(( $k + 1 ))
 	fi
     fi
