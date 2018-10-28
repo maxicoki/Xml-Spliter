@@ -8,7 +8,8 @@
 # 	1. Input filename
 # 	2. Root tag of xml file
 # 	3. Each splited file should have how much lines in it
-# 	5. Start line
+# 	4. Optional input file number of lines
+# 	5. Optional start line
 # 	6. Optional start count number
 #
 #	IMPORTANT: Optional parts should be used in order, you can not have 5 without 4 for now.
@@ -32,10 +33,15 @@ line_number=1
 lines_wrote=0
 while read -r line
 do
+    if [ $lines_wrote = 0 ];then
+	echo \<?xml version=\"1.0\" encoding=\"utf-8\"?\> >> $root_tag/$root_tag\_$k.xml
+	echo \<$root_tag\> >> $root_tag/$root_tag\_$k.xml
+    fi
     if [ $line_number -gt $(( $start - 1 )) ];then
     	echo "$line" >> $root_tag/$root_tag\_$k.xml
 	lines_wrote=$(( $lines_wrote + 1 ))
 	if [ $lines_wrote = $step ];then
+		echo \</$root_tag\> >> $root_tag/$root_tag\_$k.xml
 		echo "wrote $line_number to $(( $line_number + $step )) into $root_tag/$root_tag\_$k.xml" 
 		lines_wrote=0
 		k=$(( $k + 1 ))
