@@ -1,0 +1,96 @@
+#!/bin/bash
+#
+# This bash script needs jq and xml2json installed on your system
+# 	sudo npm install xml2json -g
+# 	sudo pacman -S jq
+#
+# Needed arguemnts for run are:
+# 	1. Input filename
+# 	2. Root tag of xml file
+# 	3. Each splited file should have how much lines in it
+# 	4. Optional input file number of lines
+# 	5. Optional start line
+# 	6. Optional start count number
+#
+#	IMPORTANT: Optional parts should be used in order, you can not have 5 without 4 for now.
+#
+
+function spliter(){
+	head=$1
+	tail=$2
+	x=$(( $1 - $2 ))
+	y=$(( $x + $2 ))
+	root_tag=$3
+	file_name=$4
+	k=$5
+	if [ $(($head - 2)) -lt $tail ]; then
+		if [ $(($head - 1)) -lt $tail ]; then
+			echo "From line 1"
+		else
+	                echo \<?xml version=\"1.0\" encoding=\"utf-8\"?\> > xml-spliter-temp.xml
+			echo "From line 2"
+		fi
+	else
+	        echo \<?xml version="1.0" encoding="utf-8"?\> > xml-spliter-temp.xml
+	        echo \<$root_tag\> >> xml-spliter-temp.xml
+	fi
+	
+	echo "sed -n -e "$x,$y p" -e "$y q" "$file_name" >> xml-spliter-temp.xml"
+	#echo "head "$file_name" -n $head | tail -n $tail >> xml-spliter-temp.xml"
+	
+	sed -n -e "$x,$y p" -e "$y q" "$file_name" >> xml-spliter-temp.xml	
+	#head "$file_name" -n $head | tail -n $tail >> xml-spliter-temp.xml
+	
+	echo \</$root_tag\> >> xml-spliter-temp.xml
+
+	mv xml-spliter-temp.xml $root_tag/$root_tag\_$k.xml
+
+	cat $root_tag/$root_tag\_$k.xml | xml2json | jq .$root_tag.row > $root_tag/json/$root_tag\_$k.json
+}
+
+if [ -f xml-spliter-temp.xml ];then
+ rm xml-spliter-temp.xml
+fi
+
+file_name=$1
+root_tag=$2
+
+if [ $4 = -1 ];then
+	lines=$(wc -l "$file_name" | awk '{ print $1 }')
+else
+	lines=$4
+fi
+
+mkdir -p $root_tag
+mkdir -p $root_tag/json
+
+step=$3
+
+start=$5
+
+if [ $6 = -1 ];then
+	k=0
+else
+	k=$6
+fi
+
+for (( i=$start; i+$step<=$lines; i=i+$step ))
+do
+	k=$(( $k + 1 ))
+	head=$(($i + $step))
+	echo current $head / $lines	
+	echo step $step
+	spliter $head $step $root_tag "$file_name" $k
+done
+
+if [ $i -lt $lines ];then
+	k=$(( $k + 1 ))
+	head=$lines 
+	step=$(($lines - $i))
+	echo current $head / $lines	
+	echo step $step
+	spliter $head $step $root_tag "$file_name" $k
+fi
+
+#command to convert xml to json
+#cat xml-spliter-temp.xml | xml2json | jq .$4.row > $5
